@@ -64,7 +64,7 @@ export default Component.extend({
   },
 
   didInsertElement(){
-    let options = this.ionReadOnlyOptions();
+    let options = this.sliderOptions;
     this.$().ionRangeSlider(options);
     this._slider = this.$().data('ionRangeSlider');
 
@@ -74,7 +74,7 @@ export default Component.extend({
   },
 
   willDestroyElement() {
-    let options = this.ionReadOnlyOptions();
+    let options = this.sliderOptions;
     for (var optName in options){
       removeObserver(this, optName, this, '_readOnlyPropertiesChanged');
     }
@@ -83,16 +83,14 @@ export default Component.extend({
 
   sliderOptions: computed(function(){
     //## Update trigger: change|finish
-    var updateTrigger = get(this, 'updateTrigger') || 'finish',
-        throttleTimeout = get(this, 'throttleTimeout') || 50,
-        to = get(this, 'to'),
-        from = get(this, 'from'),
-        options = {
-          to: 10,
-          from: 100,
-          onChange() {},
-          onFinish: bind(this, '_sliderDidFinish'),
-        };
+    var updateTrigger = this.updateTrigger || 'finish',
+      throttleTimeout = this.throttleTimeout || 50,
+      to = this.to,
+      from = this.from,
+      options = {
+        onChange: () => {},
+        onFinish: () => {},
+      };
 
     if (from || from === 0) {
       options.from = from
@@ -101,9 +99,11 @@ export default Component.extend({
       options.to = to
     }
     //## Setup change update trigger
-    if (updateTrigger === 'change') {
-      options.onChange = bind(this, '_sliderDidChange', throttleTimeout);
-      options.onFinish = function() {};
+    if (updateTrigger === 'change' || updateTrigger === 'both') {
+      options.onChange = this.onChange ? this.onChange : bind(this, '_sliderDidChange', throttleTimeout);
+    }
+    if (updateTrigger === 'finish' || updateTrigger === 'both') {
+      options.onFinish = this.onFinish ? this.onFinish : bind(this, '_sliderDidFinish');
     }
 
     merge(options, this.ionReadOnlyOptions());
